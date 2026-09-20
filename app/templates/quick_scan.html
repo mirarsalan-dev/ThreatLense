@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block header_title %}QUICK SCAN{% endblock %}
+
+{% block layout %}
+{% set active_page = 'quick_scan' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // QUICK SCAN MODULE</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body d-flex flex-column align-items-center justify-content-center">
+            
+            <div class="soc-panel p-5 text-center" style="max-width: 600px; width: 100%;">
+                <h3 class="mono-font text-cyan mb-4"><i class="fas fa-bolt me-2"></i> RAPID URL TRIAGE</h3>
+                <div class="input-group mb-4">
+                    <span class="input-group-text soc-input border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" id="quickUrl" class="form-control soc-input border-start-0 ps-0" placeholder="Enter suspicious URL...">
+                </div>
+                <button id="btnScan" class="btn soc-btn soc-btn-primary w-100 py-3"><i class="fas fa-satellite-dish me-2"></i> INITIATE SCAN</button>
+                
+                <div id="scanResults" class="mt-4 d-none text-start border-top border-secondary pt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="terminal-text text-muted">VERDICT</div>
+                        <h2 id="resVerdict" class="mono-font m-0">--</h2>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="terminal-text text-muted">RISK SCORE</div>
+                        <h2 id="resScore" class="mono-font m-0">--</h2>
+                    </div>
+                    
+                    <div class="progress mt-4 bg-black" style="height: 10px; border: 1px solid var(--border-color);">
+                        <div id="resBar" class="progress-bar" role="progressbar" style="width: 0%; background: var(--terminal-green);"></div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('dashboard.autopsy') }}" class="btn soc-btn w-100 text-muted"><i class="fas fa-microscope me-2"></i> ESCALATE TO DEEP AUTOPSY</a>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btnScan');
+    btn.addEventListener('click', async () => {
+        const url = document.getElementById('quickUrl').value;
+        if(!url) return;
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> SCANNING...';
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch('/api/scan', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ url: url })
+            });
+            const data = await res.json();
+            
+            document.getElementById('scanResults').classList.remove('d-none');
+            const v = document.getElementById('resVerdict');
+            const s = document.getElementById('resScore');
+            const b = document.getElementById('resBar');
+            
+            v.innerText = data.verdict.toUpperCase();
+            s.innerText = data.risk_score + '%';
+            b.style.width = data.risk_score + '%';
+            
+            if (data.verdict === 'phishing') {
+                v.className = 'mono-font m-0 text-red';
+                s.className = 'mono-font m-0 text-red';
+                b.style.background = 'var(--accent-red)';
+            } else {
+                v.className = 'mono-font m-0 text-green';
+                s.className = 'mono-font m-0 text-green';
+                b.style.background = 'var(--terminal-green)';
+            }
+        } catch (e) {
+            alert('Scan Failed: ' + e);
+        } finally {
+            btn.innerHTML = '<i class="fas fa-satellite-dish me-2"></i> INITIATE SCAN';
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block header_title %}CASES & INVESTIGATIONS{% endblock %}
+
+{% block layout %}
+{% set active_page = 'cases' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // INVESTIGATION CASES</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h2 class="mono-font text-cyan mb-1"><i class="fas fa-folder-open me-2"></i>ACTIVE CASES</h2>
+                    <div class="terminal-text text-muted small">MANAGE CYBER INVESTIGATIONS</div>
+                </div>
+                <button class="btn soc-btn-primary" data-bs-toggle="modal" data-bs-target="#newCaseModal">
+                    <i class="fas fa-plus me-2"></i> NEW CASE
+                </button>
+            </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="soc-panel p-3 text-center border-start border-4" style="border-color: var(--terminal-green) !important;">
+                <div class="terminal-text text-muted small mb-1">TOTAL CASES</div>
+                <h3 class="mono-font m-0 text-white" id="stat-total">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="soc-panel p-3 text-center border-start border-4" style="border-color: var(--accent-red) !important;">
+                <div class="terminal-text text-muted small mb-1">HIGH PRIORITY</div>
+                <h3 class="mono-font m-0 text-white" id="stat-high">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Board -->
+    <div class="row g-4" id="cases-grid">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-cyan mb-3"></div>
+            <div class="terminal-text text-muted">LOADING CASES...</div>
+        </div>
+    </div>
+    </div>
+</div>
+
+<!-- New Case Modal -->
+<div class="modal fade" id="newCaseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-black border border-secondary" style="border-radius: 8px;">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title mono-font text-cyan"><i class="fas fa-folder-plus me-2"></i>OPEN NEW CASE</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="newCaseForm">
+                    <div class="mb-3">
+                        <label class="form-label terminal-text text-muted small">CASE TITLE</label>
+                        <input type="text" class="form-control soc-input" id="caseTitle" required placeholder="e.g., Phishing Campaign Investigation">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label terminal-text text-muted small">PRIMARY TARGET (URL / DOMAIN / IP)</label>
+                        <input type="text" class="form-control soc-input" id="caseTarget" required placeholder="https://suspicious-domain.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label terminal-text text-muted small">PRIORITY</label>
+                        <select class="form-select soc-input" id="casePriority">
+                            <option value="Low">LOW</option>
+                            <option value="Medium" selected>MEDIUM</option>
+                            <option value="High">HIGH</option>
+                            <option value="Critical">CRITICAL</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label terminal-text text-muted small">INITIAL OBSERVATIONS</label>
+                        <textarea class="form-control soc-input" id="caseDesc" rows="3" placeholder="Analyst notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary terminal-text" data-bs-dismiss="modal">CANCEL</button>
+                <button type="button" class="btn soc-btn-primary" id="btnCreateCase">CREATE CASE</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchCases();
+
+        document.getElementById('btnCreateCase').addEventListener('click', async () => {
+            const title = document.getElementById('caseTitle').value.trim();
+            const target = document.getElementById('caseTarget').value.trim();
+            const priority = document.getElementById('casePriority').value;
+            const desc = document.getElementById('caseDesc').value.trim();
+
+            if(!title || !target) {
+                alert("Title and Target are required.");
+                return;
+            }
+
+            const btn = document.getElementById('btnCreateCase');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> CREATING...`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/cases', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title, target, priority, description: desc})
+                });
+                
+                if(res.ok) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('newCaseModal'));
+                    modal.hide();
+                    document.getElementById('newCaseForm').reset();
+                    fetchCases();
+                } else {
+                    const data = await res.json();
+                    alert("Error: " + data.message);
+                }
+            } catch(e) {
+                alert("Network error: " + e.message);
+            } finally {
+                btn.innerHTML = `CREATE CASE`;
+                btn.disabled = false;
+            }
+        });
+    });
+
+    async function fetchCases() {
+        try {
+            const res = await fetch('/api/cases');
+            const data = await res.json();
+            if(data.status === 'success') {
+                renderCases(data.cases);
+            }
+        } catch(e) {
+            document.getElementById('cases-grid').innerHTML = `<div class="col-12 text-danger">Failed to load cases.</div>`;
+        }
+    }
+
+    function renderCases(cases) {
+        const grid = document.getElementById('cases-grid');
+        grid.innerHTML = '';
+
+        document.getElementById('stat-total').innerText = cases.length;
+        document.getElementById('stat-high').innerText = cases.filter(c => c.priority === 'High' || c.priority === 'Critical').length;
+
+        if(cases.length === 0) {
+            grid.innerHTML = `<div class="col-12 text-center py-5 text-muted"><i class="fas fa-folder-open fa-3x mb-3" style="opacity:0.2;"></i><br>NO ACTIVE CASES.</div>`;
+            return;
+        }
+
+        cases.forEach(c => {
+            let pColor = 'var(--terminal-green)';
+            if(c.priority === 'Medium') pColor = 'var(--text-amber)';
+            if(c.priority === 'High' || c.priority === 'Critical') pColor = 'var(--accent-red)';
+            
+            const timeStr = new Date(c.created_at * 1000).toLocaleDateString();
+
+            grid.innerHTML += `
+            <div class="col-md-6 col-lg-4">
+                <div class="soc-panel h-100 p-4 d-flex flex-column position-relative" style="border-top: 3px solid ${pColor};">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="badge bg-secondary rounded-0">${c.case_id}</span>
+                        <span class="terminal-text small text-muted">${timeStr}</span>
+                    </div>
+                    <h5 class="text-white mt-2 text-truncate" title="${c.title}">${c.title}</h5>
+                    <div class="terminal-text text-cyan small mb-3 text-truncate"><i class="fas fa-crosshairs me-1"></i> ${c.target}</div>
+                    <p class="text-muted small flex-grow-1" style="font-size: 0.8rem;">${c.description || 'No description provided.'}</p>
+                    
+                    <div class="mt-3 pt-3 border-top border-secondary d-flex justify-content-between align-items-center">
+                        <span class="terminal-text small" style="color: ${pColor};">PRIORITY: ${c.priority.toUpperCase()}</span>
+                        <!-- In the future, this button will launch Autopsy with this case_id -->
+                        <a href="/autopsy?target=${encodeURIComponent(c.target)}&case_id=${c.case_id}" class="btn btn-sm btn-outline-cyan terminal-text">OPEN CASE <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
+                </div>
+            </div>`;
+        });
+    }
+</script>
+{% endblock %}

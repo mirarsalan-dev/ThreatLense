@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block header_title %}EVIDENCE LOCKER{% endblock %}
+
+{% block layout %}
+{% set active_page = 'evidence' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // DIGITAL EVIDENCE LOCKER</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body d-flex flex-column">
+            
+            <div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-3">
+                <div>
+                    <h4 class="mono-font text-cyan mb-1"><i class="fas fa-box me-2"></i>SECURE ARTIFACT STORAGE</h4>
+                    <div class="terminal-text text-muted small">CHAIN OF CUSTODY FOR EXTRACTED PAYLOADS, SCREENSHOTS, AND PCAP</div>
+                </div>
+                <div>
+                    <select class="form-select soc-input" style="width: 200px;">
+                        <option value="recent">RECENT ARTIFACTS</option>
+                        <option value="critical">CRITICAL EVIDENCE</option>
+                        <option value="archived">ARCHIVED</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row g-4 flex-grow-1 overflow-auto" id="evidenceContainer">
+                <div class="col-12 text-center p-5 text-muted">
+                    <i class="fas fa-box-open fa-4x mb-3 opacity-25"></i>
+                    <div>LOADING ARTIFACTS...</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadEvidence() {
+    const container = document.getElementById('evidenceContainer');
+    
+    try {
+        const res = await fetch('/api/evidence');
+        const data = await res.json();
+        
+        if (data.status !== "success") throw new Error("Failed to fetch evidence");
+        
+        let html = '';
+        if (data.evidence.length === 0) {
+            html = `<div class="col-12 text-center p-5 text-muted">
+                        <i class="fas fa-box-open fa-4x mb-3 opacity-25"></i>
+                        <div class="terminal-text">NO EVIDENCE ARTIFACTS AVAILABLE</div>
+                        <div class="terminal-text small mt-2" style="font-size: 0.75rem;">THE SECURE STORAGE BUCKET IS CURRENTLY EMPTY</div>
+                    </div>`;
+        } else {
+            data.evidence.forEach(ev => {
+                const lockIcon = ev.locked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-download"></i>';
+                const disabled = ev.locked ? 'disabled title="Storage offline"' : '';
+                html += `
+                    <div class="col-md-4 col-lg-3">
+                        <div class="soc-panel p-0 h-100 position-relative overflow-hidden group-hover">
+                            <div class="bg-black border-bottom border-secondary p-4 text-center">
+                                <i class="fas ${ev.icon} fa-4x text-${ev.color} opacity-50"></i>
+                            </div>
+                            <div class="p-3">
+                                <div class="evidence-tag border-${ev.color} text-${ev.color} mb-2">${ev.type}</div>
+                                <div class="terminal-text text-white fw-bold mb-1" style="word-break: break-all;">${ev.filename}</div>
+                                <div class="terminal-text text-muted small mb-2">SHA256: ${ev.hash}</div>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="terminal-text text-muted" style="font-size: 0.7rem;">${ev.size}</span>
+                                    <button class="btn btn-sm btn-outline-info border-0" ${disabled}>${lockIcon}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        container.innerHTML = html;
+        
+    } catch(e) {
+        container.innerHTML = `<div class="col-12 text-center p-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-3"></i><div>ERROR: ${e.message}</div></div>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadEvidence);
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block header_title %}OSINT INTELLIGENCE{% endblock %}
+
+{% block layout %}
+{% set active_page = 'osint' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // OSINT INTELLIGENCE GATHERING</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h4 class="mono-font text-cyan mb-1"><i class="fas fa-globe me-2"></i>EXTERNAL THREAT INTELLIGENCE</h4>
+                    <div class="terminal-text text-muted small">WHOIS, DNS, AND REPUTATION BLACKLIST CROSS-REFERENCING</div>
+                </div>
+                <div class="input-group" style="width: 300px;">
+                    <input type="text" id="targetQuery" class="form-control soc-input border-end-0" placeholder="Enter IP or Domain...">
+                    <button class="btn soc-btn border-start-0" onclick="mockOsint()"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            
+            <div class="row g-4" id="osintResults" style="display: none;">
+                
+                <!-- WHOIS Data -->
+                <div class="col-md-4">
+                    <div class="soc-panel p-4 h-100">
+                        <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-address-card me-2"></i>WHOIS RECORD</h5>
+                        <table class="table table-dark table-borderless terminal-text" style="font-size: 0.85rem;">
+                            <tbody>
+                                <tr><td class="text-muted w-50">REGISTRAR</td><td class="text-white">NameCheap, Inc.</td></tr>
+                                <tr><td class="text-muted">CREATION DATE</td><td class="text-amber">2023-11-05 (Young)</td></tr>
+                                <tr><td class="text-muted">EXPIRATION DATE</td><td class="text-white">2024-11-05</td></tr>
+                                <tr><td class="text-muted">REGISTRANT ORG</td><td class="text-white">Privacy Protect, LLC</td></tr>
+                                <tr><td class="text-muted">REGISTRANT COUNTRY</td><td class="text-white">IS (Iceland)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- DNS Data -->
+                <div class="col-md-4">
+                    <div class="soc-panel p-4 h-100">
+                        <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-server me-2"></i>DNS RESOLUTION</h5>
+                        <table class="table table-dark table-borderless terminal-text" style="font-size: 0.85rem;">
+                            <tbody>
+                                <tr><td class="text-muted w-25">A</td><td class="text-white">192.168.45.12 <span class="badge bg-danger ms-2">Flagged IP</span></td></tr>
+                                <tr><td class="text-muted">AAAA</td><td class="text-white">No IPv6 Records</td></tr>
+                                <tr><td class="text-muted">MX</td><td class="text-white">mail.suspicious-host.com</td></tr>
+                                <tr><td class="text-muted">NS</td><td class="text-white">ns1.namecheap.com<br>ns2.namecheap.com</td></tr>
+                                <tr><td class="text-muted">TXT</td><td class="text-amber">No SPF/DMARC Configured</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Reputation -->
+                <div class="col-md-4">
+                    <div class="soc-panel p-4 h-100">
+                        <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-shield-alt me-2"></i>BLACKLIST STATUS</h5>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="d-flex justify-content-between align-items-center p-2 border border-secondary bg-black">
+                                <span class="terminal-text text-white">Google Safe Browsing</span>
+                                <span class="evidence-tag border-danger text-danger">MALWARE</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 border border-secondary bg-black">
+                                <span class="terminal-text text-white">VirusTotal Engine</span>
+                                <span class="evidence-tag border-danger text-danger">15/92 ENGINES</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 border border-secondary bg-black">
+                                <span class="terminal-text text-white">Spamhaus DBL</span>
+                                <span class="evidence-tag border-success text-success">CLEAN</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 border border-secondary bg-black">
+                                <span class="terminal-text text-white">PhishTank</span>
+                                <span class="evidence-tag border-danger text-danger">LISTED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Default State -->
+            <div class="d-flex flex-column justify-content-center align-items-center flex-grow-1 text-center h-100" id="osintDefault">
+                <i class="fas fa-globe text-secondary mb-3" style="font-size: 5rem; opacity: 0.2;"></i>
+                <div class="terminal-text text-muted">AWAITING OSINT QUERY</div>
+                <div class="terminal-text text-muted" style="font-size: 0.75rem;">Enter an IP or Domain to execute global intelligence gathering</div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function mockOsint() {
+    const q = document.getElementById('targetQuery').value;
+    if(!q) return;
+    
+    document.getElementById('osintDefault').style.display = 'none';
+    const resultsContainer = document.getElementById('osintResults');
+    resultsContainer.style.display = 'flex';
+    
+    // Clear and show loading state
+    resultsContainer.innerHTML = '<div class="col-12 text-center p-5 text-cyan"><i class="fas fa-satellite-dish fa-spin fa-2x mb-3"></i><div>GATHERING GLOBAL INTELLIGENCE...</div></div>';
+    
+    try {
+        const res = await fetch(`/api/osint?target=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        // Render WHOIS
+        let whoisHtml = '';
+        if (data.modules && data.modules.whois && data.modules.whois.status === "SUCCESS") {
+            const w = data.modules.whois.details || {};
+            whoisHtml = `
+                <tr><td class="text-muted w-50">REGISTRAR</td><td class="text-white">${w.registrar || 'Unknown'}</td></tr>
+                <tr><td class="text-muted">CREATION DATE</td><td class="text-amber">${w.creation_date || 'Unknown'}</td></tr>
+                <tr><td class="text-muted">EXPIRATION DATE</td><td class="text-white">${w.expiration_date || 'Unknown'}</td></tr>
+                <tr><td class="text-muted">REGISTRANT ORG</td><td class="text-white">${w.org || 'Privacy Protected'}</td></tr>
+                <tr><td class="text-muted">REGISTRANT COUNTRY</td><td class="text-white">${w.country || 'Unknown'}</td></tr>
+            `;
+        } else {
+            whoisHtml = '<tr><td colspan="2" class="text-danger">WHOIS resolution failed or timed out.</td></tr>';
+        }
+        
+        // Render DNS
+        let dnsHtml = '';
+        if (data.modules && data.modules.dns && data.modules.dns.status === "SUCCESS") {
+            const d = data.modules.dns.records || {};
+            dnsHtml += `<tr><td class="text-muted w-25">A</td><td class="text-white">${d.A && d.A.length ? d.A.join('<br>') : 'None'}</td></tr>`;
+            dnsHtml += `<tr><td class="text-muted">AAAA</td><td class="text-white">${d.AAAA && d.AAAA.length ? d.AAAA.join('<br>') : 'None'}</td></tr>`;
+            dnsHtml += `<tr><td class="text-muted">MX</td><td class="text-white">${d.MX && d.MX.length ? d.MX.join('<br>') : 'None'}</td></tr>`;
+            dnsHtml += `<tr><td class="text-muted">NS</td><td class="text-white">${d.NS && d.NS.length ? d.NS.join('<br>') : 'None'}</td></tr>`;
+            dnsHtml += `<tr><td class="text-muted">TXT</td><td class="text-amber">${d.TXT && d.TXT.length ? d.TXT.join('<br>') : 'None'}</td></tr>`;
+        } else {
+            dnsHtml = '<tr><td colspan="2" class="text-danger">DNS resolution failed or timed out.</td></tr>';
+        }
+        
+        // Render Rep
+        let repHtml = `
+            <div class="d-flex justify-content-between align-items-center p-2 border border-secondary bg-black">
+                <span class="terminal-text text-white">SSL Status</span>
+                <span class="evidence-tag border-info text-info">${data.modules?.ssl?.status === "SUCCESS" ? 'VALID' : 'UNVERIFIED'}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center p-2 border border-secondary bg-black">
+                <span class="terminal-text text-white">VirusTotal Engine</span>
+                <span class="evidence-tag border-amber text-amber">${data.modules?.reputation?.details?.virustotal_score || 'SIMULATION: 0/94'}</span>
+            </div>
+        `;
+        
+        resultsContainer.innerHTML = `
+            <div class="col-md-4">
+                <div class="soc-panel p-4 h-100">
+                    <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-address-card me-2"></i>WHOIS RECORD</h5>
+                    <table class="table table-dark table-borderless terminal-text" style="font-size: 0.85rem;">
+                        <tbody>${whoisHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="soc-panel p-4 h-100">
+                    <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-server me-2"></i>DNS RESOLUTION</h5>
+                    <table class="table table-dark table-borderless terminal-text" style="font-size: 0.85rem;">
+                        <tbody>${dnsHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="soc-panel p-4 h-100">
+                    <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-shield-alt me-2"></i>BLACKLIST STATUS</h5>
+                    <div class="d-flex flex-column gap-3">${repHtml}</div>
+                </div>
+            </div>
+        `;
+        
+    } catch (e) {
+        resultsContainer.innerHTML = `<div class="col-12 text-center p-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-3"></i><div>OSINT ERROR: ${e.message}</div></div>`;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block header_title %}WHAT-IF SIMULATOR{% endblock %}
+
+{% block layout %}
+{% set active_page = 'simulator' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // WHAT-IF ML SIMULATOR</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h2 class="mono-font text-cyan mb-1"><i class="fas fa-sliders-h me-2"></i>WHAT-IF SIMULATOR</h2>
+                    <div class="terminal-text text-muted small">MANUALLY TWEAK ML FEATURES TO OBSERVE MODEL SENSITIVITY</div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="soc-panel p-4">
+                        <div class="mb-4">
+                            <label class="form-label terminal-text text-muted">URL LENGTH (<span id="val_len">50</span> chars)</label>
+                            <input type="range" class="form-range" id="sim_url_length" min="10" max="300" value="50">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label terminal-text text-muted">DOMAIN AGE (<span id="val_age">365</span> days)</label>
+                            <input type="range" class="form-range" id="sim_domain_age" min="1" max="1000" value="365">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label terminal-text text-muted">SUSPICIOUS WORDS COUNT (<span id="val_words">0</span>)</label>
+                            <input type="range" class="form-range" id="sim_suspicious_words" min="0" max="10" value="0">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label terminal-text text-muted">IS HTTPS SECURED?</label>
+                            <select class="form-select soc-input" id="sim_https">
+                                <option value="1">YES (1)</option>
+                                <option value="0">NO (0)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="soc-panel p-4 text-center h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="terminal-text text-muted mb-2">// SIMULATED RISK SCORE</div>
+                        <h1 class="mono-font m-0" id="sim_score" style="font-size: 4rem; color: var(--terminal-green);">15</h1>
+                        <div class="terminal-text mt-2 text-green" id="sim_verdict" style="letter-spacing: 2px;">SAFE</div>
+                        
+                        <div class="mt-4 p-3 bg-black border border-secondary rounded text-start w-100">
+                            <i class="fas fa-info-circle text-cyan mb-2"></i>
+                            <div class="terminal-text text-muted" style="font-size: 0.75rem;">
+                                SIMULATION — NOT A REAL SCAN.<br>
+                                Adjusting these sliders sends real-time feature vectors to the Random Forest surrogate to test boundary conditions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const inputs = ['sim_url_length', 'sim_domain_age', 'sim_suspicious_words', 'sim_https'];
+    
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', (e) => {
+            if(id !== 'sim_https') {
+                document.getElementById('val_' + id.replace('sim_', '').replace('url_length', 'len').replace('domain_age', 'age').replace('suspicious_words', 'words')).innerText = e.target.value;
+            }
+            runSimulation();
+        });
+    });
+    
+    async function runSimulation() {
+        const payload = {
+            url_length: document.getElementById('sim_url_length').value,
+            domain_age: document.getElementById('sim_domain_age').value,
+            suspicious_words: document.getElementById('sim_suspicious_words').value,
+            is_https: parseInt(document.getElementById('sim_https').value)
+        };
+        
+        const res = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        const scoreEl = document.getElementById('sim_score');
+        const verdEl = document.getElementById('sim_verdict');
+        
+        scoreEl.innerText = data.risk_score;
+        verdEl.innerText = data.verdict.toUpperCase();
+        
+        if (data.verdict === 'phishing' || data.risk_score > 60) {
+            scoreEl.style.color = 'var(--accent-red)';
+            verdEl.style.color = 'var(--accent-red)';
+            verdEl.className = "terminal-text mt-2 text-red";
+        } else if (data.risk_score > 30) {
+            scoreEl.style.color = 'var(--accent-amber)';
+            verdEl.style.color = 'var(--accent-amber)';
+            verdEl.className = "terminal-text mt-2 text-amber";
+        } else {
+            scoreEl.style.color = 'var(--terminal-green)';
+            verdEl.style.color = 'var(--terminal-green)';
+            verdEl.className = "terminal-text mt-2 text-green";
+        }
+    }
+});
+</script>
+{% endblock %}

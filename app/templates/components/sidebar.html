@@ -1,0 +1,52 @@
+<!-- Left Application Dock -->
+<div class="app-dock d-none" id="app-dock">
+    <!-- Investigation -->
+    <a href="{{ url_for('dashboard.command_center') }}" class="dock-icon {% if active_page == 'command_center' %}active{% endif %}" data-tooltip="Command Center">
+        <i class="fas fa-terminal"></i>
+    </a>
+    <a href="{{ url_for('dashboard.quick_scan') }}" class="dock-icon {% if active_page == 'quick_scan' %}active{% endif %}" data-tooltip="Quick Scan">
+        <i class="fas fa-bolt"></i>
+    </a>
+    <a href="{{ url_for('dashboard.simulator') }}" class="dock-icon {% if active_page == 'simulator' %}active{% endif %}" data-tooltip="ML Simulator">
+        <i class="fas fa-sliders-h"></i>
+    </a>
+    <a href="{{ url_for('dashboard.cases') }}" class="dock-icon {% if active_page == 'cases' %}active{% endif %}" data-tooltip="Cases">
+        <i class="fas fa-folder-open"></i>
+    </a>
+    <a href="{{ url_for('dashboard.autopsy') }}" class="dock-icon {% if active_page == 'autopsy' %}active{% endif %}" data-tooltip="URL Autopsy">
+        <i class="fas fa-microscope"></i>
+    </a>
+    
+    <div style="width: 20px; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
+
+    <!-- Forensics -->
+    <a href="{{ url_for('dashboard.threat_dna') }}" class="dock-icon {% if active_page == 'threat_dna' %}active{% endif %}" data-tooltip="Threat DNA">
+        <i class="fas fa-fingerprint"></i>
+    </a>
+    <a href="{{ url_for('dashboard.threat_graph') }}" class="dock-icon {% if active_page == 'threat_graph' %}active{% endif %}" data-tooltip="Threat Graph">
+        <i class="fas fa-project-diagram"></i>
+    </a>
+    <a href="{{ url_for('dashboard.osint') }}" class="dock-icon {% if active_page == 'osint' %}active{% endif %}" data-tooltip="OSINT Intel">
+        <i class="fas fa-globe"></i>
+    </a>
+    <a href="{{ url_for('dashboard.mitre') }}" class="dock-icon {% if active_page == 'mitre' %}active{% endif %}" data-tooltip="MITRE ATT&CK">
+        <i class="fas fa-shield-virus"></i>
+    </a>
+
+    <div style="width: 20px; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
+
+    <!-- Archive -->
+    <a href="{{ url_for('dashboard.hunter') }}" class="dock-icon {% if active_page == 'hunter' %}active{% endif %}" data-tooltip="Threat Hunter">
+        <i class="fas fa-search"></i>
+    </a>
+    <a href="{{ url_for('dashboard.evidence') }}" class="dock-icon {% if active_page == 'evidence' %}active{% endif %}" data-tooltip="Evidence Locker">
+        <i class="fas fa-box"></i>
+    </a>
+    
+    <div style="width: 20px; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
+    
+    <!-- System -->
+    <a href="#" onclick="openSecurityCenter(); return false;" class="dock-icon text-info" data-tooltip="Security Center">
+        <i class="fas fa-shield-alt"></i>
+    </a>
+</div>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block layout %}
+{% set active_page = 'hunter' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // HUNTER</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+    <div class="soc-panel p-5 text-center mt-5" style="max-width: 600px; margin: 0 auto; border-color: var(--accent-cyan);">
+        <i class="fas fa-search fa-3x text-cyan mb-4"></i>
+        <h3 class="mono-font text-cyan">THREAT HUNTER</h3>
+        <p class="text-muted terminal-text mt-3">
+            > historical_search_unavailable...<br>
+            > Advanced threat hunting and similarity matching will be available in Phase 10.
+        </p>
+        <a href="{{ url_for('dashboard.command_center') }}" class="btn soc-btn soc-btn-primary mt-4">RETURN TO COMMAND CENTER</a>
+    </div>
+</div>
+    </div>
+</div>
+{% endblock %}

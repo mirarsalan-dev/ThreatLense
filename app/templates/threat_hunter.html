@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block header_title %}THREAT HUNTER{% endblock %}
+
+{% block layout %}
+{% set active_page = 'hunter' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // THREAT HUNTER QUERY CONSOLE</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body d-flex flex-column">
+            
+            <div class="soc-panel p-3 mb-3 d-flex gap-3 align-items-center">
+                <div class="flex-grow-1">
+                    <div class="input-group">
+                        <span class="input-group-text soc-input border-end-0 text-cyan"><i class="fas fa-terminal"></i></span>
+                        <input type="text" id="searchQuery" class="form-control soc-input border-start-0" placeholder="e.g., verdict:phishing AND osint.domain:'*secure*'">
+                    </div>
+                </div>
+                <button class="btn soc-btn soc-btn-primary" onclick="hunt()"><i class="fas fa-search me-2"></i> EXECUTE QUERY</button>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="terminal-text text-muted small">
+                        <i class="fas fa-info-circle me-1"></i> Hint: You can search by URL, Case ID, or Verdict. The global search API will cross-reference all historical telemetry.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="soc-panel bg-black flex-grow-1 overflow-auto p-0 border border-secondary">
+                <table class="table table-dark table-hover mb-0 terminal-text small">
+                    <thead class="sticky-top bg-dark">
+                        <tr>
+                            <th class="text-cyan border-bottom border-secondary p-3">TIMESTAMP / SCAN ID</th>
+                            <th class="text-cyan border-bottom border-secondary p-3">TARGET URL / IOC</th>
+                            <th class="text-cyan border-bottom border-secondary p-3">VERDICT</th>
+                            <th class="text-cyan border-bottom border-secondary p-3">RISK SCORE</th>
+                            <th class="text-cyan border-bottom border-secondary p-3">CASE ID</th>
+                            <th class="text-cyan border-bottom border-secondary p-3">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="searchResults">
+                        <!-- Default state -->
+                        <tr>
+                            <td colspan="6" class="text-center p-5 text-muted">
+                                <i class="fas fa-ghost fa-3x mb-3 opacity-25"></i>
+                                <div>READY FOR HUNTING INSTRUCTIONS</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function hunt() {
+    const q = document.getElementById('searchQuery').value;
+    const tbody = document.getElementById('searchResults');
+    
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-cyan"><i class="fas fa-circle-notch fa-spin fa-2x mb-2"></i><div>QUERYING DATASTORE...</div></td></tr>`;
+    
+    try {
+        const res = await fetch(`/api/scans/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            if (data.scans.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-muted">NO MATCHING TELEMETRY FOUND</td></tr>`;
+                return;
+            }
+            
+            let html = '';
+            data.scans.forEach(scan => {
+                const badge = scan.verdict === 'phishing' ? 'badge bg-danger' : 'badge bg-success';
+                const time = new Date().toLocaleString(); // If timestamp exists, parse it, else generic
+                html += `
+                    <tr>
+                        <td class="p-3 align-middle text-muted">
+                            <div>${time}</div>
+                            <div class="user-select-all" style="font-size: 0.7rem; opacity: 0.7;" title="Click to copy">${scan.scan_id}</div>
+                        </td>
+                        <td class="p-3 align-middle text-white">${scan.url}</td>
+                        <td class="p-3 align-middle"><span class="${badge}">${scan.verdict.toUpperCase()}</span></td>
+                        <td class="p-3 align-middle">${scan.risk_score}</td>
+                        <td class="p-3 align-middle text-muted">${scan.case_id || 'ORPHAN'}</td>
+                        <td class="p-3 align-middle">
+                            <a href="/mitre?scan_id=${scan.scan_id}" class="btn btn-sm soc-btn text-cyan" title="View MITRE TTPs"><i class="fas fa-project-diagram"></i></a>
+                            <a href="/osint?target=${encodeURIComponent(scan.url)}" class="btn btn-sm soc-btn text-cyan" title="Run OSINT on Target"><i class="fas fa-globe"></i></a>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-red">QUERY ERROR: ${e.message}</td></tr>`;
+    }
+}
+</script>
+{% endblock %}

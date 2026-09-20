@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block layout %}
+{% set active_page = 'command_center' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // COMMAND CENTER OVERVIEW</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h4 class="mono-font text-cyan mb-1">SECURITY OPERATIONS CENTER</h4>
+            <div class="terminal-text text-muted small">OVERVIEW & GLOBAL METRICS</div>
+        </div>
+        <div class="terminal-text text-green small">
+            <i class="fas fa-circle me-1" style="font-size:0.5rem"></i> SYSTEM NOMINAL
+        </div>
+    </div>
+
+    <!-- Top Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="soc-panel p-3">
+                <div class="terminal-text text-muted mb-2 small">TOTAL SCANS (24H)</div>
+                <h2 class="mono-font text-cyan m-0">{{ total_scans }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="soc-panel p-3">
+                <div class="terminal-text text-muted mb-2 small">THREATS DETECTED</div>
+                <h2 class="mono-font text-red m-0">{{ threats_detected }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="soc-panel p-3">
+                <div class="terminal-text text-muted mb-2 small">ACTIVE INCIDENTS</div>
+                <h2 class="mono-font text-amber m-0">{{ active_incidents }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="soc-panel p-3">
+                <div class="terminal-text text-muted mb-2 small">ML CONFIDENCE AVG</div>
+                <h2 class="mono-font text-green m-0">{{ avg_confidence }}%</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Live Threat Feed -->
+        <div class="col-lg-8">
+            <div class="soc-panel d-flex flex-column" style="height: 400px;">
+                <div class="terminal-header d-flex justify-content-between">
+                    <span>LIVE THREAT FEED</span>
+                    <a href="{{ url_for('dashboard.hunter') }}" class="text-muted text-decoration-none"><i class="fas fa-external-link-alt"></i></a>
+                </div>
+                <div class="p-0 flex-grow-1 overflow-auto">
+                    <table class="table table-dark table-hover mb-0 terminal-text small">
+                        <thead>
+                            <tr>
+                                <th class="text-muted font-weight-normal border-bottom-0">TIMESTAMP</th>
+                                <th class="text-muted font-weight-normal border-bottom-0">TARGET URL</th>
+                                <th class="text-muted font-weight-normal border-bottom-0">VERDICT</th>
+                                <th class="text-muted font-weight-normal border-bottom-0">RISK</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_scans %}
+                                {% for scan in recent_scans %}
+                                <tr>
+                                    <td>
+                                        <div>{{ scan.timestamp[:19].replace('T', ' ') if scan.timestamp else 'UNKNOWN' }}</div>
+                                        <div class="user-select-all text-muted" style="font-size: 0.7rem;" title="Click to copy">{{ scan.scan_id or scan.id }}</div>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 250px;">{{ scan.target_url }}</td>
+                                    <td>
+                                        {% if scan.verdict == 'MALICIOUS' %}
+                                        <span class="badge bg-danger rounded-0">MALICIOUS</span>
+                                        {% elif scan.verdict == 'SAFE' %}
+                                        <span class="badge bg-success rounded-0">SAFE</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark rounded-0">SUSPICIOUS</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ scan.risk_score }}/100</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted p-4">
+                                        <i class="fas fa-search mb-2 d-block"></i>
+                                        NO INVESTIGATIONS YET
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="soc-panel h-100">
+                <div class="terminal-header">
+                    OPERATOR TERMINAL
+                </div>
+                <div class="p-4 text-center d-flex flex-column gap-3 justify-content-center" style="height: calc(100% - 35px);">
+                    <i class="fas fa-satellite-dish fa-3x text-muted mb-2"></i>
+                    <p class="terminal-text small text-muted">Awaiting operator instructions.</p>
+                    
+                    <a href="{{ url_for('dashboard.autopsy') }}" class="btn soc-btn soc-btn-primary w-100">
+                        <i class="fas fa-microscope me-2"></i> START URL AUTOPSY
+                    </a>
+                    <a href="{{ url_for('dashboard.quick_scan') }}" class="btn soc-btn w-100">
+                        <i class="fas fa-bolt me-2"></i> NEW QUICK SCAN
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

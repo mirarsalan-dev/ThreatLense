@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block boot_sequence %}
+<!-- No boot sequence on login screen -->
+{% endblock %}
+
+{% block topbar %}
+<!-- No top bar on login -->
+{% endblock %}
+
+{% block layout %}
+<div class="container-fluid min-vh-100 d-flex justify-content-center align-items-center">
+    
+    <div style="width: 100%; max-width: 450px;">
+        <!-- Terminal Header -->
+        <div class="terminal-header d-flex justify-content-between">
+            <span>root@threatlense:~/auth</span>
+            <span><i class="fas fa-terminal"></i></span>
+        </div>
+        
+        <!-- Terminal Body -->
+        <div class="soc-panel p-4 rounded-bottom" style="border-top: none;">
+            
+            <div class="text-center mb-4 mt-2">
+                <i class="fas fa-fingerprint fa-3x text-muted mb-3"></i>
+                <h3 class="mono-font text-cyan mb-1" style="letter-spacing: 2px;">THREATLENSE</h3>
+                <p class="terminal-text text-muted small" style="font-size: 0.75rem;">SECURE DIGITAL FORENSICS WORKSTATION</p>
+            </div>
+
+            <div class="terminal-text small text-amber mb-3">
+                > authentication_required = true<br>
+                > await credentials...
+            </div>
+
+            <div id="loginError" class="alert alert-danger d-none small p-2 mb-3" role="alert">
+                <span id="loginErrorText"></span>
+            </div>
+
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label terminal-text text-muted" style="font-size: 0.8rem;">[ OPERATOR ID ]</label>
+                    <input type="email" id="email" class="form-control soc-input" placeholder="root" required autofocus>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label terminal-text text-muted" style="font-size: 0.8rem;">[ ACCESS HASH ]</label>
+                    <input type="password" id="password" class="form-control soc-input" placeholder="********" required>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn soc-btn soc-btn-primary w-100 py-2">
+                    <span class="terminal-prompt"></span> authenticate <span class="terminal-blinking-cursor">_</span>
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <a href="#" class="terminal-text text-muted text-decoration-none" style="font-size: 0.75rem; border-bottom: 1px dashed var(--text-muted);">RESET_CREDENTIALS</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+    import { auth } from "{{ url_for('static', filename='js/firebase_init.js') }}";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const submitBtn = document.getElementById('submitBtn');
+        const errorDiv = document.getElementById('loginError');
+        const errorText = document.getElementById('loginErrorText');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'VERIFYING CREDENTIALS...';
+        errorDiv.classList.add('d-none');
+        
+        try {
+            // Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const idToken = await userCredential.user.getIdToken();
+            
+            submitBtn.innerHTML = 'ESTABLISHING SECURE SESSION...';
+            
+            // POST to backend for session cookie
+            const response = await fetch("{{ url_for('auth.session_login') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ idToken: idToken })
+            });
+            
+            if (response.ok) {
+                submitBtn.innerHTML = 'ACCESS GRANTED.';
+                submitBtn.classList.replace('soc-btn-primary', 'btn-outline-success');
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('dashboard.command_center') }}";
+                }, 500);
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || "Session creation failed");
+            }
+        } catch (error) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="terminal-prompt"></span> authenticate <span class="terminal-blinking-cursor">_</span>';
+            errorText.innerText = "ACCESS DENIED: " + error.message;
+            errorDiv.classList.remove('d-none');
+        }
+    });
+</script>
+{% endblock %}

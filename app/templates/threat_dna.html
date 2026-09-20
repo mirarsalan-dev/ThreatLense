@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block header_title %}THREAT DNA{% endblock %}
+
+{% block layout %}
+{% set active_page = 'threat_dna' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // THREAT DNA COMPARISON</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h4 class="mono-font text-cyan mb-1"><i class="fas fa-fingerprint me-2"></i>DNA COMPARISON ENGINE</h4>
+                    <div class="terminal-text text-muted small">CORRELATE ATTACK INFRASTRUCTURE & STRUCTURAL SIGNATURES</div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="soc-panel p-4">
+                        <label class="form-label terminal-text text-muted">TARGET SCAN A (ID)</label>
+                        <input type="text" id="scan1" class="form-control soc-input mb-3" placeholder="Enter Scan ID...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="soc-panel p-4">
+                        <label class="form-label terminal-text text-muted">TARGET SCAN B (ID)</label>
+                        <input type="text" id="scan2" class="form-control soc-input mb-3" placeholder="Enter Scan ID...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center my-4">
+                <button id="btnCompare" class="btn soc-btn soc-btn-primary px-5 py-2"><i class="fas fa-project-diagram me-2"></i> EXECUTE CROSS-ANALYSIS</button>
+            </div>
+            
+            <div class="row g-4 d-none" id="compareResults">
+                <div class="col-md-6">
+                    <div class="soc-panel p-4 h-100">
+                        <h5 class="mono-font text-cyan border-bottom border-secondary pb-2 mb-3"><i class="fas fa-check-circle me-2"></i>COMMON INDICATORS (OVERLAP)</h5>
+                        <div id="commonContainer" class="d-flex flex-column gap-2"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="soc-panel p-4 h-100">
+                        <h5 class="mono-font text-amber border-bottom border-secondary pb-2 mb-3"><i class="fas fa-exclamation-triangle me-2"></i>DIVERGENT TTPs (DIFFERENCES)</h5>
+                        <div id="diffContainer" class="d-flex flex-column gap-2"></div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnCompare').addEventListener('click', async () => {
+        const s1 = document.getElementById('scan1').value.trim();
+        const s2 = document.getElementById('scan2').value.trim();
+        
+        if(!s1 || !s2) {
+            alert('Please enter two Scan IDs to compare.');
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/api/scans/compare?id1=${s1}&id2=${s2}`);
+            if(!res.ok) throw new Error('Failed to fetch comparison');
+            const data = await res.json();
+            
+            document.getElementById('compareResults').classList.remove('d-none');
+            const comm = document.getElementById('commonContainer');
+            const diff = document.getElementById('diffContainer');
+            
+            comm.innerHTML = '';
+            diff.innerHTML = '';
+            
+            if(data.common_indicators.length === 0) {
+                comm.innerHTML = '<div class="terminal-text text-muted">No structural overlaps detected.</div>';
+            } else {
+                data.common_indicators.forEach(i => {
+                    comm.innerHTML += `<div class="p-2 border border-secondary bg-black d-flex justify-content-between">
+                        <span class="terminal-text text-green">${i.indicator}</span>
+                        <span class="terminal-text text-muted">${i.value}</span>
+                    </div>`;
+                });
+            }
+            
+            if(data.different_indicators.length === 0) {
+                diff.innerHTML = '<div class="terminal-text text-muted">Identical DNA signatures.</div>';
+            } else {
+                data.different_indicators.forEach(i => {
+                    diff.innerHTML += `<div class="p-2 border border-secondary bg-black d-flex flex-column gap-1">
+                        <div class="terminal-text text-amber border-bottom border-secondary pb-1 mb-1">${i.indicator}</div>
+                        <div class="d-flex justify-content-between terminal-text" style="font-size:0.8rem">
+                            <span class="text-muted">A: ${i.scan1}</span>
+                            <span class="text-muted">B: ${i.scan2}</span>
+                        </div>
+                    </div>`;
+                });
+            }
+            
+        } catch(e) {
+            alert('Comparison Error: ' + e.message);
+        }
+    });
+});
+</script>
+{% endblock %}

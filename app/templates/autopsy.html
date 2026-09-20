@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block header_title %}URL AUTOPSY{% endblock %}
+
+{% block layout %}
+{% set active_page = 'autopsy' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // URL AUTOPSY FORENSICS</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body">
+    
+    <div class="row g-3">
+        <!-- Target Investigation Terminal (Left/Center) -->
+        <div class="col-lg-8 d-flex flex-column gap-3">
+            
+            <!-- Terminal Input Module -->
+            <div class="soc-panel">
+                <div class="terminal-header">
+                    ┌─[ THREATLENSE // URL AUTOPSY MODULE ]
+                </div>
+                <div class="p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="terminal-prompt terminal-text"></span>
+                        <span class="terminal-text text-cyan">investigate</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <span class="input-group-text soc-input border-end-0 text-muted"><i class="fas fa-link"></i></span>
+                        <input type="text" id="targetUrl" class="form-control soc-input border-start-0 ps-0" placeholder="https://example.com" value="http://secure-login-update-account.com">
+                    </div>
+                    
+                    <div class="d-flex gap-3 mt-4">
+                        <button id="btnQuickScan" class="btn soc-btn flex-grow-1"><i class="fas fa-bolt me-2"></i> QUICK SCAN</button>
+                        <button id="btnFullAutopsy" class="btn soc-btn soc-btn-primary flex-grow-1"><i class="fas fa-microscope me-2"></i> EXECUTE DEEP AUTOPSY</button>
+                        <button id="btnExportStix" class="btn soc-btn d-none" title="Export STIX 2.1 Bundle"><i class="fas fa-download"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Forensic Terminal (Log Module) -->
+            <div class="soc-panel flex-grow-1 d-flex flex-column">
+                <div class="terminal-header justify-content-between">
+                    <span>LIVE FORENSIC TERMINAL</span>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="text-muted text-decoration-none" onclick="document.getElementById('terminal-log').innerHTML=''"><i class="fas fa-eraser"></i> CLEAR</a>
+                    </div>
+                </div>
+                <div class="p-3 terminal-text flex-grow-1 bg-black" style="min-height: 250px; overflow-y: auto;" id="terminal-log">
+                    <div class="text-muted">Awaiting target input for dissection...</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Panel (Threat Status & Visuals) -->
+        <div class="col-lg-4 d-flex flex-column gap-3">
+            
+            <!-- Radial Threat Status -->
+            <div class="soc-panel p-4 text-center">
+                <div class="terminal-text text-muted mb-3" style="font-size: 0.8rem; text-align: left;">// THREAT STATUS</div>
+                
+                <div class="position-relative d-inline-block mt-2 mb-3">
+                    <svg width="180" height="180" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border-color)" stroke-width="8"></circle>
+                        <circle id="threat-meter-ring" cx="50" cy="50" r="45" fill="none" stroke="var(--terminal-green)" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283" transform="rotate(-90 50 50)" style="transition: stroke-dashoffset 1.5s ease-out, stroke 0.5s;"></circle>
+                    </svg>
+                    <div class="position-absolute top-50 start-50 translate-middle text-center w-100">
+                        <h2 class="mono-font m-0" id="threat-score">--</h2>
+                        <div class="terminal-text" id="threat-verdict" style="font-size: 0.8rem; letter-spacing: 1px;">WAITING</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between terminal-text text-start mt-2" style="font-size: 0.75rem;">
+                    <div class="d-flex flex-column gap-2">
+                        <div><i id="indicator-ml" class="fas fa-circle text-muted" style="font-size:0.5rem"></i> ML ENGINE</div>
+                        <div><i id="indicator-osint" class="fas fa-circle text-muted" style="font-size:0.5rem"></i> OSINT</div>
+                        <div><i id="indicator-dns" class="fas fa-circle text-muted" style="font-size:0.5rem"></i> DNS/SSL</div>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <div><i id="indicator-content" class="fas fa-circle text-muted" style="font-size:0.5rem"></i> CONTENT</div>
+                        <div><i id="indicator-network" class="fas fa-circle text-muted" style="font-size:0.5rem"></i> NETWORK</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threat DNA Preview -->
+            <div class="soc-panel p-3 flex-grow-1 d-flex flex-column">
+                <div class="terminal-text text-muted mb-3" style="font-size: 0.8rem;">// THREAT DNA SIGNATURE</div>
+                <div class="radar-container flex-grow-1" style="min-height: 250px;">
+                    <canvas id="threatDnaChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Investigation Report/Result Area -->
+    <div id="investigation-result" class="row mt-3 d-none">
+        <div class="col-12">
+            <div class="soc-panel p-4">
+                <h5 class="mono-font text-cyan mb-4">// WHY WAS THIS TARGET FLAGGED?</h5>
+                
+                <div class="row" id="explainable-ai-container">
+                    <!-- Explainable AI modules will be injected here via JS -->
+                </div>
+                
+                <hr class="border-secondary mt-4 mb-4">
+                
+                <h5 class="mono-font text-cyan mb-3">// THREAT GRAPH</h5>
+                <div class="soc-panel bg-black" style="height: 400px; border: 1px solid var(--border-color);">
+                    <div id="threat-network-graph" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/visualisations.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnAutopsy = document.getElementById('btnFullAutopsy');
+        const btnQuick = document.getElementById('btnQuickScan');
+        const terminalLog = document.getElementById('terminal-log');
+        
+        btnQuick.addEventListener('click', () => {
+            window.location.href = "{{ url_for('dashboard.quick_scan') }}";
+        });
+
+        // Pre-fill from URL parameters (e.g. launched from Cases dashboard)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCaseId = urlParams.get('case_id');
+        const urlTarget = urlParams.get('target');
+        
+        if (urlTarget) {
+            document.getElementById('targetUrl').value = urlTarget;
+        }
+
+        btnAutopsy.addEventListener('click', async () => {
+            const url = document.getElementById('targetUrl').value.trim();
+            if(!url) return;
+
+            // Reset UI
+            terminalLog.innerHTML = '';
+            document.getElementById('investigation-result').classList.add('d-none');
+            
+            // Terminal Logs simulation sequence
+            const logs = [
+                `root@threatlense:~$ execute_autopsy ${url}`,
+                `[INFO] Target accepted. Initializing forensic engines...`,
+                `[+] Extracting linguistic & structural features...`,
+                `[+] Dispatching ML prediction engine...`,
+                `[+] Querying DNS and WHOIS records (OSINT)...`,
+                `[+] Safely downloading target DOM payload (2MB strict limit)...`,
+                `[+] Executing static HTML parsing for credential forms...`,
+                `[+] Analyzing Javascript for obfuscation patterns...`
+            ];
+
+            const writeLog = (msg, className="text-muted") => {
+                const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                terminalLog.innerHTML += `<div class="${className}"><span class="text-secondary">${time}</span> ${msg}</div>`;
+                terminalLog.scrollTop = terminalLog.scrollHeight;
+            };
+
+            for(let i=0; i<logs.length; i++) {
+                setTimeout(() => writeLog(logs[i]), i * 400);
+            }
+
+            try {
+                btnAutopsy.disabled = true;
+                
+                // Actual API call
+                const payload = { url: url };
+                if (urlCaseId) {
+                    payload.case_id = urlCaseId;
+                }
+                
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                setTimeout(() => {
+                    writeLog(`[OK] Deep Autopsy complete. Generating Explainable AI report.`, 'text-green');
+                    btnAutopsy.disabled = false;
+                    
+                    // Update Radial Meter
+                    updateThreatMeter(data.risk_score, data.verdict);
+                    
+                    // Update Explainable AI & Show results
+                    document.getElementById('investigation-result').classList.remove('d-none');
+                    renderExplainableAI(data);
+                    
+                    // Render Visualisations (Threat DNA and Graph)
+                    window.renderThreatDNA(data);
+                    window.renderThreatGraph(data);
+
+                    // Update status indicators
+                    ['ml', 'osint', 'dns', 'content', 'network'].forEach(ind => {
+                        const el = document.getElementById(`indicator-${ind}`);
+                        el.classList.remove('text-muted');
+                        el.classList.add(data.verdict === 'phishing' ? 'text-amber' : 'text-green');
+                    });
+                    
+                    // Show Export button
+                    const btnExport = document.getElementById('btnExportStix');
+                    btnExport.classList.remove('d-none');
+                    btnExport.onclick = () => {
+                        window.open(`/api/scans/${data.scan_id}/stix`, '_blank');
+                    };
+                    
+                }, logs.length * 400 + 800);
+
+            } catch (err) {
+                setTimeout(() => {
+                    writeLog(`[ERROR] ENGINE FAILURE: ${err.message}`, 'text-red');
+                    btnAutopsy.disabled = false;
+                }, logs.length * 400 + 500);
+            }
+        });
+        
+        function updateThreatMeter(score, verdict) {
+            const meter = document.getElementById('threat-meter-ring');
+            const scoreText = document.getElementById('threat-score');
+            const verdictText = document.getElementById('threat-verdict');
+            
+            const offset = 283 - (283 * score / 100);
+            meter.style.strokeDashoffset = offset;
+            
+            let color = 'var(--terminal-green)';
+            if (verdict === 'phishing' || score > 70) color = 'var(--accent-red)';
+            else if (score > 40) color = 'var(--accent-amber)';
+            
+            meter.style.stroke = color;
+            scoreText.style.color = color;
+            verdictText.style.color = color;
+            
+            scoreText.textContent = score;
+            verdictText.textContent = verdict.toUpperCase();
+        }
+        
+        function renderExplainableAI(data) {
+            const container = document.getElementById('explainable-ai-container');
+            let html = '';
+            let tagCounter = 1;
+
+            const formatId = (id) => id.toString().padStart(2, '0');
+
+            // 1. Machine Learning Engine Tag (Overall)
+            const ml_conf = (data.ml_analysis.confidence * 100).toFixed(1);
+            html += generateExplainableCard(
+                formatId(tagCounter++), 
+                'MACHINE LEARNING', 
+                `Random Forest ensemble predicts <b>${data.verdict.toUpperCase()}</b> with ${ml_conf}% confidence based on ${data.features_extracted} structural features.`, 
+                'ML_ENGINE', 
+                data.verdict === 'phishing' ? 'HIGH' : 'LOW'
+            );
+
+            // 1b. Explainable AI Feature Importances
+            if (data.ml_analysis.explanations && data.ml_analysis.explanations.length > 0) {
+                data.ml_analysis.explanations.forEach(exp => {
+                    html += generateExplainableCard(
+                        formatId(tagCounter++), 
+                        `MODEL INSIGHT: ${exp.feature.toUpperCase().replace(/_/g, ' ')}`, 
+                        `Observed Value: <b>${exp.value}</b>.<br>${exp.description}`, 
+                        'XAI_FEATURE_WEIGHT', 
+                        exp.importance > 0.1 ? 'HIGH' : 'WARNING'
+                    );
+                });
+            }
+
+            // 2. OSINT (Domain Age)
+            if (data.osint && data.osint.domain_age_days !== null) {
+                if (data.osint.domain_age_days < 30) {
+                    html += generateExplainableCard(
+                        formatId(tagCounter++), 
+                        'DOMAIN REPUTATION', 
+                        `Domain is extremely young (${data.osint.domain_age_days} days). Commonly associated with disposable phishing campaigns.`, 
+                        'OSINT_WHOIS', 
+                        'CRITICAL'
+                    );
+                } else {
+                    html += generateExplainableCard(
+                        formatId(tagCounter++), 
+                        'DOMAIN REPUTATION', 
+                        `Established domain age (${data.osint.domain_age_days} days). Reduces likelihood of burner phishing attack.`, 
+                        'OSINT_WHOIS', 
+                        'LOW'
+                    );
+                }
+            }
+
+            // 3. Web Forensics - Suspicious Forms
+            if (data.forensics && data.forensics.status === "SUCCESS") {
+                const forms = data.forensics.html_analysis.suspicious_forms || [];
+                if (forms.length > 0) {
+                    html += generateExplainableCard(
+                        formatId(tagCounter++), 
+                        'CREDENTIAL HARVESTING', 
+                        `Detected ${forms.length} form(s) requesting passwords that post data to an external, unauthorized domain.`, 
+                        'FORENSICS_DOM', 
+                        'CRITICAL'
+                    );
+                }
+                
+                // 4. Web Forensics - Hidden Iframes
+                const iframes = data.forensics.html_analysis.hidden_iframes || [];
+                if (iframes.length > 0) {
+                    html += generateExplainableCard(
+                        formatId(tagCounter++), 
+                        'HIDDEN PAYLOADS', 
+                        `Detected ${iframes.length} invisible iframe(s). Often used for drive-by downloads or stealth cryptomining.`, 
+                        'FORENSICS_DOM', 
+                        'HIGH'
+                    );
+                }
+
+                // 5. Web Forensics - JS Obfuscation
+                if (data.forensics.js_analysis.obfuscation_detected) {
+                    html += generateExplainableCard(
+                        formatId(tagCounter++), 
+                        'JAVASCRIPT OBFUSCATION', 
+                        `High density of hex/unicode escapes detected in JS blocks. Attempting to hide malicious execution.`, 
+                        'FORENSICS_JS', 
+                        'HIGH'
+                    );
+                }
+            }
+
+            container.innerHTML = html;
+        }
+        
+        function generateExplainableCard(id, title, desc, source, severity) {
+            let color = 'var(--accent-cyan)';
+            if (severity === 'CRITICAL' || severity === 'HIGH') color = 'var(--accent-red)';
+            if (severity === 'WARNING') color = 'var(--accent-amber)';
+            if (severity === 'LOW') color = 'var(--terminal-green)';
+
+            return `
+            <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded" style="border-color: var(--border-color) !important; background: rgba(255,255,255,0.02); height: 100%;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="mono-font text-muted">[${id}] ${title}</span>
+                        <span class="evidence-tag" style="color: ${color}; border-color: ${color};">${severity}</span>
+                    </div>
+                    <div class="terminal-text mb-2" style="font-size: 0.85rem;">${desc}</div>
+                    <div class="terminal-text text-muted mt-auto" style="font-size: 0.7rem;">SOURCE: ${source}</div>
+                </div>
+            </div>`;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block header_title %}MITRE ATT&CK{% endblock %}
+
+{% block layout %}
+{% set active_page = 'mitre' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // MITRE ATT&CK MAPPING</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h4 class="mono-font text-cyan mb-1"><i class="fas fa-shield-virus me-2"></i>MITRE ATT&CK NAVIGATOR</h4>
+                    <div class="terminal-text text-muted small">MAPPING OBSERVABLES TO ADVERSARY TACTICS AND TECHNIQUES</div>
+                </div>
+                <div class="input-group" style="width: 300px;">
+                    <input type="text" id="scanIdInput" class="form-control soc-input border-end-0" placeholder="Load Scan ID...">
+                    <button class="btn soc-btn border-start-0" onclick="generateMitre()"><i class="fas fa-sync"></i></button>
+                </div>
+            </div>
+            
+            <div class="row g-2 flex-grow-1 overflow-auto" id="mitreContainer">
+                <div class="col-12 text-center p-5 text-muted">
+                    <i class="fas fa-shield-virus fa-4x mb-3 opacity-25"></i>
+                    <div>AWAITING SCAN TARGET TO GENERATE MAPPING</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function generateMitre() {
+    const scanId = document.getElementById('scanIdInput').value.trim();
+    if(!scanId) return;
+    
+    const container = document.getElementById('mitreContainer');
+    container.innerHTML = '<div class="col-12 text-center p-5 text-cyan"><i class="fas fa-circle-notch fa-spin fa-3x mb-3"></i><div>ANALYZING ML OBSERVABLES...</div></div>';
+    
+    try {
+        const res = await fetch(`/api/mitre?scan_id=${encodeURIComponent(scanId)}`);
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        const ttps = data.ttps;
+        let html = '';
+        
+        const columns = [
+            { key: 'initial_access', title: 'INITIAL ACCESS (TA0001)' },
+            { key: 'execution', title: 'EXECUTION (TA0002)' },
+            { key: 'defense_evasion', title: 'DEFENSE EVASION (TA0005)' },
+            { key: 'credential_access', title: 'CREDENTIAL ACCESS (TA0006)' }
+        ];
+        
+        columns.forEach(col => {
+            html += `<div class="col-md-3"><div class="soc-panel p-2 h-100">
+                <div class="terminal-text text-cyan border-bottom border-secondary pb-1 mb-2">${col.title}</div>`;
+                
+            ttps[col.key].forEach(t => {
+                if(t.active) {
+                    html += `<div class="p-2 mb-2 bg-black border border-danger text-danger terminal-text small">
+                        ${t.id} - ${t.name}
+                        <div class="text-muted mt-1" style="font-size: 0.7rem;">${t.evidence}</div>
+                    </div>`;
+                } else {
+                    html += `<div class="p-2 mb-2 bg-black border border-secondary text-muted terminal-text small">
+                        ${t.id} - ${t.name}
+                    </div>`;
+                }
+            });
+            
+            html += `</div></div>`;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch(e) {
+        container.innerHTML = `<div class="col-12 text-center p-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-3"></i><div>ERROR: ${e.message}</div></div>`;
+    }
+}
+</script>
+{% endblock %}

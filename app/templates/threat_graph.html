@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block header_title %}THREAT GRAPH{% endblock %}
+
+{% block layout %}
+{% set active_page = 'threat_graph' %}
+{% include 'components/sidebar.html' %}
+
+<div class="desktop-workspace">
+    <div class="cyber-window" style="height: 100%;">
+        <div class="cyber-window-header">
+            <div>● ● ● THREATLENSE // THREAT GRAPH VISUALIZATION</div>
+            <div class="window-controls">
+                <div class="win-btn win-min"></div>
+                <div class="win-btn win-max"></div>
+                <div class="win-btn win-close"></div>
+            </div>
+        </div>
+        <div class="cyber-window-body d-flex flex-column">
+            
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div>
+                    <h4 class="mono-font text-cyan mb-1"><i class="fas fa-project-diagram me-2"></i>LINK ANALYSIS GRAPH</h4>
+                    <div class="terminal-text text-muted small">CORRELATING DOMAINS, IPs, ASNs, AND THREAT ACTORS</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn soc-btn py-1 px-3" onclick="generateGraph()"><i class="fas fa-random me-2"></i> GENERATE GRAPH FROM SCAN</button>
+                    <button class="btn soc-btn py-1 px-3"><i class="fas fa-expand"></i></button>
+                </div>
+            </div>
+            
+            <div class="soc-panel bg-black flex-grow-1 position-relative" style="border: 1px solid var(--border-color); overflow: hidden; min-height: 400px;">
+                <div id="graph-container" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
+                
+                <!-- Legend -->
+                <div class="position-absolute bottom-0 start-0 p-3 m-3 soc-panel bg-dark bg-opacity-75" style="border: 1px solid var(--border-color); z-index: 10;">
+                    <div class="terminal-text text-muted mb-2 border-bottom border-secondary pb-1">NODE LEGEND</div>
+                    <div class="d-flex flex-column gap-2" style="font-size: 0.8rem;">
+                        <div><i class="fas fa-circle text-danger me-2"></i> MALICIOUS DOMAIN</div>
+                        <div><i class="fas fa-circle text-warning me-2"></i> SUSPICIOUS IP</div>
+                        <div><i class="fas fa-circle text-info me-2"></i> ASN / HOSTING</div>
+                        <div><i class="fas fa-circle text-secondary me-2"></i> DROPPED PAYLOAD</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let network = null;
+
+async function generateGraph() {
+    const container = document.getElementById('graph-container');
+    const scanId = prompt("Enter a Scan ID to visualize (e.g. from the Threat Hunter console):");
+    if (!scanId) return;
+    
+    container.innerHTML = '<div class="d-flex h-100 justify-content-center align-items-center text-cyan"><i class="fas fa-circle-notch fa-spin fa-3x"></i></div>';
+    
+    try {
+        const res = await fetch(`/api/graph?scan_id=${scanId}`);
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        const nodes = new vis.DataSet(data.nodes);
+        const edges = new vis.DataSet(data.edges);
+
+        const options = {
+            nodes: {
+                shape: 'dot',
+                font: { color: '#a0a0a0', face: 'JetBrains Mono' },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 1,
+                color: { color: '#334155', highlight: '#0ff' },
+                font: { color: '#64748b', size: 10, face: 'JetBrains Mono', align: 'middle' },
+                arrows: 'to'
+            },
+            groups: {
+                domain: { color: { background: '#1e1e1e', border: '#ef4444' } },
+                ip: { color: { background: '#1e1e1e', border: '#f59e0b' } },
+                asn: { color: { background: '#1e1e1e', border: '#0ea5e9' } },
+                payload: { color: { background: '#1e1e1e', border: '#94a3b8' } }
+            },
+            physics: {
+                barnesHut: { gravitationalConstant: -2000, centralGravity: 0.3, springLength: 150 },
+                stabilization: { iterations: 200 }
+            }
+        };
+
+        if(network) network.destroy();
+        network = new vis.Network(container, { nodes, edges }, options);
+    } catch(e) {
+        container.innerHTML = `<div class="d-flex h-100 justify-content-center align-items-center text-danger"><i class="fas fa-exclamation-triangle fa-2x me-2"></i> ERROR: ${e.message}</div>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial empty state
+    const container = document.getElementById('graph-container');
+    container.innerHTML = '<div class="d-flex h-100 flex-column justify-content-center align-items-center text-muted"><i class="fas fa-project-diagram fa-4x mb-3 opacity-25"></i><div>AWAITING SCAN TARGET</div></div>';
+});
+</script>
+{% endblock %}
