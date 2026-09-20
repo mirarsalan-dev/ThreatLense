@@ -81,7 +81,7 @@ def create_app():
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;"
+            "connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com;"
         )
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
