@@ -71,8 +71,9 @@ cd ThreatLense
 ```
 
 ### 2. Environment Setup (Recommended)
-Create and activate an isolated Python virtual environment:
+Navigate to the `Backend` directory, then create and activate an isolated Python virtual environment:
 ```bash
+cd Backend
 python -m venv venv
 
 # On Linux/macOS:
@@ -87,14 +88,20 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configuration
-- Create a `.env` file in the root directory (you can use `.env.example` as a template).
-- Place your Firebase Admin SDK credential file in the root directory and name it `serviceAccountKey.json`.
+- Create a `.env` file in the `Backend` directory (you can use `.env.example` as a template).
+- Place your Firebase Admin SDK credential file in the `Backend` directory and name it `serviceAccountKey.json`.
 
-### 5. Launch ThreatLense
+### 5. Launch ThreatLense (Locally)
 ```bash
 python app.py
 ```
 > 🎉 **Success!** The application will be accessible at `http://127.0.0.1:5000`.
+
+### Alternative: Launch with Docker
+You can easily spin up both the Frontend and Backend using Docker Compose from the project root:
+```bash
+docker-compose up --build
+```
 
 ---
 
