@@ -4,7 +4,13 @@ import firebase_admin
 from firebase_admin import credentials
 
 def create_app():
-    app = Flask(__name__)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    frontend_dir = os.path.abspath(os.path.join(base_dir, '..', '..', 'Frontend'))
+    
+    template_dir = os.path.join(frontend_dir, 'templates')
+    static_dir = os.path.join(frontend_dir, 'static')
+    
+    app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
     app.config.from_object('config.Config')
 
     # Initialize Firebase Admin SDK
