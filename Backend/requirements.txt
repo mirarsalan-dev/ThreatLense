@@ -11,3 +11,4 @@ beautifulsoup4==4.12.3
 dnspython==2.6.1
 python-whois==0.8.0
 cryptography==42.0.5
+gunicorn==21.2.0

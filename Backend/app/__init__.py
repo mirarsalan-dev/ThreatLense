@@ -1,7 +1,24 @@
 import os
+import threading
+import time
+import requests
 from flask import Flask, request
 import firebase_admin
 from firebase_admin import credentials
+
+def keep_awake():
+    """Background thread to ping the server every 14 minutes to prevent Render from sleeping."""
+    url = os.getenv("RENDER_EXTERNAL_URL")
+    if not url:
+        return
+        
+    while True:
+        time.sleep(14 * 60)  # 14 minutes
+        try:
+            requests.get(f"{url}/api/health")
+            print(f"Keep-awake ping sent to {url}/api/health")
+        except Exception as e:
+            print(f"Keep-awake ping failed: {e}")
 
 def create_app():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +41,11 @@ def create_app():
             print(f"Error initializing Firebase: {e}")
     else:
         print("Warning: Firebase credentials not found. Some features may be disabled.")
+
+    # Start keep-awake thread if running on Render
+    if os.getenv("RENDER_EXTERNAL_URL"):
+        thread = threading.Thread(target=keep_awake, daemon=True)
+        thread.start()
 
     # Register blueprints
     from .routes.auth import auth_bp
